@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laundryless - Available Routes</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 10px; text-align: left; border: 1px solid #ccc; }
+        th { background-color: #f2f2f2; }
+        a { text-decoration: none; color: #007BFF; }
+        a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <h1>Available Routes in Laundryless</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>Route</th>
+                <th>Methods</th>
+                <th>Endpoint</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for route in routes %}
+            <tr>
+                <td><a href="{{ route.rule }}">{{ route.rule }}</a></td>
+                <td>{{ route.methods }}</td>
+                <td>{{ route.endpoint }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
