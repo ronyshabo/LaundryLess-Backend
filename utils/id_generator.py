@@ -24,3 +24,5 @@ def generate_order_id():
 
 def generate_garment_id():
     return generate_id('GARM', 'garment_counter', 5)
+
+# test sending to master
