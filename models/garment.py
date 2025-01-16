@@ -1,11 +1,15 @@
 from app import db
+import uuid
+from google.cloud import firestore
+from utils.garment_prices import GARMENT_PRICE_MAP
 
 class Garment:
-    def __init__(self, garment_id, customer_id, type, price):
-        self.garment_id = garment_id
-        self.customer_id = customer_id
-        self.type = type
-        self.price = price
+    def __init__(self, name, quantity=1):
+        self.garment_id = str(uuid.uuid4())
+        self.name = name.lower()
+        self.price = GARMENT_PRICE_MAP.get(self.name, 0.0)
+        self.quantity = quantity
+        self.status = 'available'
 
     def save_to_db(self):
         db.collection('garments').document(self.garment_id).set(self.to_dict())
@@ -13,14 +17,17 @@ class Garment:
     def to_dict(self):
         return {
             'garment_id': self.garment_id,
-            'customer_id': self.customer_id,
-            'type': self.type,
-            'price': self.price
+            'name': self.name,
+            'price': self.price,
+            'quantity': self.quantity,
+            'status': self.status,
+            'total_price': self.price * self.quantity
         }
 
 class Hamper(Garment):
-    def __init__(self, garment_id, customer_id):
-        super().__init__(garment_id, customer_id, 'Hamper', 20.0)
+    def __init__(self, customer_id, quantity=1):
+        super().__init__(customer_id, 'hamper', quantity)
+        self.price = 10.0
         self.max_weight = 20
 
     def to_dict(self):

@@ -2,23 +2,13 @@ from flask import Blueprint, request, jsonify
 from firebase_admin import auth
 from flasgger import swag_from
 from models.user import DriverUser
+from utils.id_generator import generate_driver_id
 from app import db
 
 
 # Initialize Blueprint for Driver routes
 driver_bp = Blueprint('driver_bp', __name__)
 
-
-# Helper function to generate sequential driverID
-def generate_driver_id():
-    counter_ref = db.collection('counters').document('driver_counter')
-    counter_doc = counter_ref.get()
-    if counter_doc.exists:
-        current_id = counter_doc.to_dict().get('current_id', 0) + 1
-    else:
-        current_id = 1
-    counter_ref.set({'current_id': current_id})
-    return f"DRIVER{str(current_id).zfill(4)}"
 
 # Endpoint to register a new driver
 @driver_bp.route('/driver_register', methods=['POST'])

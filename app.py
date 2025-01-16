@@ -6,6 +6,7 @@ from API.admin_routes import admin_bp
 from API.user_routes import user_bp
 from API.driver_routes import driver_bp
 from API.garmnet_routes import garment_bp
+from API.order_routes import order_bp
 from main import main_bp
 import sys
 import os
@@ -45,6 +46,8 @@ app.register_blueprint(main_bp)
 app.register_blueprint(admin_bp, url_prefix='/api')
 app.register_blueprint(user_bp, url_prefix='/api')
 app.register_blueprint(driver_bp, url_prefix='/api')
+app.register_blueprint(garment_bp, url_prefix='/api')
+app.register_blueprint(order_bp, url_prefix='/api')
 
 
 if __name__ == '__main__':
