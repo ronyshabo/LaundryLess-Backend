@@ -1,5 +1,6 @@
-import uuid
 from app import db
+import uuid
+from google.cloud import firestore
 from utils.garment_prices import GARMENT_PRICE_MAP
 
 class Garment:

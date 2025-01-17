@@ -1,6 +1,7 @@
+from flask import render_template, current_app, Blueprint, redirect, url_for
 from . import main_bp
-from flask import render_template, current_app
-
+from .main import google_callback
+from API import user_bp
 
 @main_bp.route('/')
 def home():

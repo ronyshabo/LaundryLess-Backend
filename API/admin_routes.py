@@ -1,20 +1,19 @@
 from app import db
 import firebase_admin
-from . import admin_bp
 from config import Config
 from flasgger import swag_from
 from models.hamper import Hamper
-from models.user import AdminUser
-from models.garment import Garment
 from flask import request, jsonify
-from utils.id_generator import generate_admin_id
-from utils.garment_prices import GARMENT_PRICE_MAP
+from . import admin_bp, user_bp, hamper_bp
 from firebase_admin import credentials, initialize_app, auth
+from utils.id_generator import generate_admin_id, generate_garment_id
 
 
 if not firebase_admin._apps:
     cred = credentials.Certificate(Config.FIREBASE_CREDENTIALS)
     initialize_app(cred)
+    
+# ****************************************** Admin Routes ******************************************
 
 # Admin Registration
 @admin_bp.route('/admin_register', methods=['POST'])
@@ -57,7 +56,6 @@ def register_admin():
     try:
         user_record = auth.create_user(email=email, password=password)
         admin_id = generate_admin_id()  # Generate sequential AdminID
-        admin_user = AdminUser(user_id=user_record.uid, email=email)
         admin_data = {
             'admin_id': admin_id,
             'email': email,
@@ -116,11 +114,14 @@ def login_admin():
         return jsonify({'error': str(e)}), 400
     except Exception as e:
         return jsonify({'error': str(e)}), 400
+    
+#****************************************** Admin user routes******************************************
 
-@admin_bp.route('/get_all_users', methods=['GET'])
+
+@user_bp.route('/get_all_users', methods=['GET'])
 @swag_from({
     'tags': ['Admin'],
-    'summary': 'Retrieve all users from the database',
+    'summary': 'Admin-only: Retrieve all users from the database',
     'responses': {
         200: {'description': 'List of all users'},
         400: {'description': 'Error retrieving users'}
@@ -164,7 +165,7 @@ def get_all_users():
         return jsonify({'error': str(e)}), 400
 
 # Endpoint to get user by user_id
-@admin_bp.route('/get_user/<user_id>', methods=['GET'])
+@user_bp.route('/get_user/<user_id>', methods=['GET'])
 @swag_from({
     'tags': ['Admin'],
     'summary': 'Retrieve a user by user_id',
@@ -196,69 +197,12 @@ def get_user_by_id(user_id):
 
     except Exception as e:
         return jsonify({'error': str(e)}), 400
-    
-    
-@admin_bp.route('/create_dry_cleaning_garment', methods=['POST'])
+
+#********************************************* Admin Hamper routes *******************************************
+
+@hamper_bp.route('/create_hamper', methods=['POST'])
 @swag_from({
-    'tags': ['Garment'],
-    'summary': 'Admin-only: Create a new dry cleaning garment',
-    'parameters': [
-        {
-            'name': 'Authorization',
-            'in': 'header',
-            'required': True,
-            'type': 'string',
-            'description': 'Admin user ID for authentication (e.g., ADMIN0001)'
-        },
-        {
-            'name': 'body',
-            'in': 'body',
-            'required': True,
-            'schema': {
-                'type': 'object',
-                'properties': {
-                    'name': {'type': 'string'}
-                },
-                'required': ['name']
-            }
-        }
-    ],
-    'responses': {
-        201: {'description': 'Garment created and saved successfully'},
-        403: {'description': 'Access denied. Admins only.'},
-        400: {'description': 'Invalid input or error creating garment'}
-    }
-})
-def create_dry_cleaning_garment():
-    data = request.get_json()
-    garment_name = data.get('name')
-
-    # Check if Authorization header is present and starts with ADMIN
-    admin_id = request.headers.get('Authorization')
-
-    if not admin_id or not admin_id.startswith('ADMIN'):
-        return jsonify({'error': 'Access denied. Only admins can perform this action.'}), 403
-
-    try:
-        # Validate garment name
-        if not garment_name or garment_name.lower() not in GARMENT_PRICE_MAP:
-            return jsonify({'error': 'Invalid or unsupported garment name.'}), 400
-
-        # Save to 'garments' collection
-        garment = Garment(name=garment_name)
-        garment.save_to_db()
-
-        return jsonify({
-            'message': 'Dry cleaning garment created successfully',
-            'garment': garment.to_dict()
-        }), 201
-
-    except Exception as e:
-        return jsonify({'error': str(e)}), 400
-    
-@admin_bp.route('/create_hamper', methods=['POST'])
-@swag_from({
-    'tags': ['Hamper'],
+    'tags': ['Admin'],
     'summary': 'Admin-only: Create a new hamper and save it to the database',
     'parameters': [
         {
@@ -303,9 +247,10 @@ def create_hamper():
         hampers = []
 
         for _ in range(quantity):
-            # Generate a new hamper and save it
+            # Generate a new hamper with a unique garment ID and save it
+            garment_id = generate_garment_id()
             hamper = Hamper(quantity=1)
-            hamper.save_to_db()
+            db.collection('hampers').document(garment_id).set(hamper.to_dict())
             hampers.append(hamper.to_dict())
 
         return jsonify({
