@@ -25,4 +25,5 @@ def generate_order_id():
 def generate_garment_id():
     return generate_id('GARM', 'garment_counter', 5)
 
-# test sending to master
+def generate_credit_card_id():
+    return generate_id('CREDI_TCARD', 'garment_counter', 5)

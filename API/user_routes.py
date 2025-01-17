@@ -1,19 +1,18 @@
 import re
-from flask import Blueprint, request, jsonify
-from firebase_admin import auth
-from flasgger import swag_from
-from models.user import User, CreditCard
-from utils.id_generator import generate_user_id
 from app import db
+from . import user_bp
+from flasgger import swag_from
+from firebase_admin import auth
+from flask import request, jsonify
+from models.user import User, CreditCard
+from utils.id_generator import generate_user_id, generate_credit_card_id
 
-# Initialize Blueprint for User routes
-user_bp = Blueprint('user_bp', __name__)
 
 # Endpoint to register a new user
 @user_bp.route('/user_register', methods=['POST'])
 @swag_from({
     'tags': ['User'],
-    'summary': 'Register a new user',
+    'summary': 'Admin-only:Register a new user',
     'parameters': [
         {
             'name': 'body',
@@ -138,7 +137,7 @@ def login_user():
 })
 def update_user_info():
     data = request.get_json()
-    user_id = data.get('user_id')  # Changed from 'uid' to 'user_id'
+    user_id = data.get('user_id')
     full_name = data.get('full_name')
     phone_number = data.get('phone_number')
     address = data.get('address')
@@ -186,10 +185,6 @@ def update_user_info():
 
     except Exception as e:
         return jsonify({'error': str(e)}), 400
-    
-    
-# Endpoint to get all users
-
     
 # Endpoint to add credit card information for a user
 @user_bp.route('/add_credit_card', methods=['POST'])
@@ -247,25 +242,20 @@ def add_credit_card():
         # Get the Firestore document ID
         user_doc_id = user_docs[0].id
 
+        # Generate unique credit card ID
+        credit_card_id = generate_credit_card_id()
+
         # Initialize credit card model
         credit_card = CreditCard(
             cardholder_name=cardholder_name,
             card_number=card_number,
             expiration_date=expiration_date,
-            billing_address=billing_address
+            billing_address=billing_address,
+            credit_card_id=credit_card_id
         )
 
-        # Fetch existing credit cards if any
-        user_doc = db.collection('users').document(user_doc_id).get()
-        existing_cards = user_doc.to_dict().get('credit_cards', [])
-
-        # Append the new credit card
-        existing_cards.append(credit_card.to_dict())
-
-        # Update the user's document with the new credit card
-        db.collection('users').document(user_doc_id).update({
-            'credit_cards': existing_cards
-        })
+        # Save the credit card to the user's subcollection in Firestore
+        db.collection('users').document(user_doc_id).collection('credit_cards').document(credit_card_id).set(credit_card.to_dict())
 
         return jsonify({'message': 'Credit card added successfully.'}), 200
 

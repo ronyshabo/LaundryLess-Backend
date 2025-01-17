@@ -1,12 +1,13 @@
 from flask import Flask
 from flasgger import Swagger
-from firebase import db  # ✅ Import Firestore from firebase.py
+from firebase import db
 from config import Config
 from API.admin_routes import admin_bp
 from API.user_routes import user_bp
 from API.driver_routes import driver_bp
 from API.garmnet_routes import garment_bp
 from API.order_routes import order_bp
+from API import hamper_bp
 from main import main_bp
 import sys
 import os
@@ -48,6 +49,7 @@ app.register_blueprint(user_bp, url_prefix='/api')
 app.register_blueprint(driver_bp, url_prefix='/api')
 app.register_blueprint(garment_bp, url_prefix='/api')
 app.register_blueprint(order_bp, url_prefix='/api')
+app.register_blueprint(hamper_bp, url_prefix='/api')
 
 
 if __name__ == '__main__':

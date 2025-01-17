@@ -10,7 +10,7 @@ class Hamper(Garment):
         self.status = 'pending'
         self.timestamp = firestore.SERVER_TIMESTAMP
 
-    def save_to_db(self):
+    def save_hamper_to_db(self):
         db.collection('hampers').document(self.garment_id).set(self.to_dict())
 
     def to_dict(self):
