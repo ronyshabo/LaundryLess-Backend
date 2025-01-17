@@ -1,16 +1,19 @@
 from app import db
-from . import driver_bp
 from flasgger import swag_from
 from firebase_admin import auth
-from flask import request, jsonify
+from flask import Blueprint, request, jsonify
 from utils.id_generator import generate_driver_id
 
-# ****************************************** Driver Routes ******************************************
+
+# Initialize Blueprint for Driver routes
+driver_bp = Blueprint('driver_bp', __name__)
+
+
 # Endpoint to register a new driver
 @driver_bp.route('/driver_register', methods=['POST'])
 @swag_from({
-    'tags': ['Admin'],
-    'summary': 'Admin-only: Register a new driver',
+    'tags': ['Driver'],
+    'summary': 'Register a new driver',
     'parameters': [
         {
             'name': 'body',
@@ -64,7 +67,7 @@ def register_driver():
 # Endpoint to retrieve driver profile
 @driver_bp.route('/driver/<driver_id>', methods=['GET'])
 @swag_from({
-    'tags': ['Admin'],
+    'tags': ['Driver'],
     'summary': 'Retrieve driver profile by ID',
     'parameters': [
         {

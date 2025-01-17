@@ -1,6 +1,6 @@
-from datetime import datetime
 import re
 from firebase import db
+from datetime import datetime
 
 class User:
     def __init__(self, user_id, email):

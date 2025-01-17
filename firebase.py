@@ -1,6 +1,6 @@
 import firebase_admin
-from firebase_admin import credentials, initialize_app, firestore
 from config import Config
+from firebase_admin import credentials, initialize_app, firestore
 
 # Initialize Firebase only once
 if not firebase_admin._apps:

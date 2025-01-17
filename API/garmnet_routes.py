@@ -1,77 +1,17 @@
 from firebase import db
 from flasgger import swag_from
-from flask import request, jsonify
-from . import garment_bp, hamper_bp
-from models.garment import Hamper, Garment
-from utils.garment_prices import GARMENT_PRICE_MAP
+from models.garment import Hamper
+from flask import Blueprint, request, jsonify
 from utils.id_generator import generate_garment_id
 
-######################################## Create a Dry Cleaning Garment ########################################
 
-@garment_bp.route('/create_dry_cleaning_garment', methods=['POST'])
+garment_bp = Blueprint('garment_bp', __name__)
+
+
+######################################## 2️ Order a Hamper ########################################
+@garment_bp.route('/order_hamper', methods=['POST'])
 @swag_from({
-    'tags': ['Admin'],
-    'summary': 'Admin-only: Create a new dry cleaning garment',
-    'parameters': [
-        {
-            'name': 'Authorization',
-            'in': 'header',
-            'required': True,
-            'type': 'string',
-            'description': 'Admin user ID for authentication (e.g., ADMIN0001)'
-        },
-        {
-            'name': 'body',
-            'in': 'body',
-            'required': True,
-            'schema': {
-                'type': 'object',
-                'properties': {
-                    'name': {'type': 'string'}
-                },
-                'required': ['name']
-            }
-        }
-    ],
-    'responses': {
-        201: {'description': 'Garment created and saved successfully'},
-        403: {'description': 'Access denied. Admins only.'},
-        400: {'description': 'Invalid input or error creating garment'}
-    }
-})
-def create_dry_cleaning_garment():
-    data = request.get_json()
-    garment_name = data.get('name')
-
-    # Check if Authorization header is present and starts with ADMIN
-    admin_id = request.headers.get('Authorization')
-
-    if not admin_id or not admin_id.startswith('ADMIN'):
-        return jsonify({'error': 'Access denied. Only admins can perform this action.'}), 403
-
-    try:
-        garment_id = generate_garment_id()
-        # Validate garment name
-        if not garment_name or garment_name.lower() not in GARMENT_PRICE_MAP:
-            return jsonify({'error': 'Invalid or unsupported garment name.'}), 400
-
-        # Save to 'garments' collection with garment_id
-        garment = Garment(name=garment_name, garment_id=garment_id)
-        db.collection('garments').document(garment_id).set(garment.to_dict())
-
-        return jsonify({
-            'message': 'Dry cleaning garment created successfully',
-            'garment': garment.to_dict()
-        }), 201
-
-    except Exception as e:
-        return jsonify({'error': str(e)}), 400
-
-######################################## Order a Hamper ########################################
-
-@hamper_bp.route('/order_hamper', methods=['POST'])
-@swag_from({
-    'tags': ['Order'],
+    'tags': ['Garment'],
     'summary': 'Order a hamper bag with a max weight of 20 lbs',
     'parameters': [
         {
@@ -106,7 +46,7 @@ def order_hamper():
         for _ in range(quantity):
             # Corrected Hamper initialization
             hamper = Hamper(customer_id=customer_id, quantity=1)
-            hamper.save_hamper_to_db()
+            hamper.save_to_db()
             hampers.append(hamper.to_dict())
         return jsonify({
             'message': f'{quantity} hamper(s) ordered successfully',
@@ -117,11 +57,10 @@ def order_hamper():
         return jsonify({'error': str(e)}), 400
 
 
-############################# Update Hamper Price Based on Weight ###############
-
-@hamper_bp.route('/update_hamper_price', methods=['PUT'])
+####################################### Update Hamper Price Based on Weight #######################################
+@garment_bp.route('/update_hamper_price', methods=['PUT'])
 @swag_from({
-    'tags': ['Admin'],
+    'tags': ['Garment'],
     'summary': 'Update hamper price based on its weight',
     'parameters': [
         {
@@ -170,6 +109,61 @@ def update_hamper_price():
             'message': 'Hamper price updated successfully',
             'updated_price': updated_price
         }), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+    
+    ##################################### Create a hamper  #######################################
+@garment_bp.route('/create_hamper', methods=['POST'])
+@swag_from({
+    'tags': ['Hamper'],
+    'summary': 'Create a new hamper and save it to the database',
+    'parameters': [
+        {
+            'name': 'body',
+            'in': 'body',
+            'required': True,
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'quantity': {'type': 'integer', 'default': 1}
+                }
+            }
+        }
+    ],
+    'responses': {
+        201: {'description': 'Hamper(s) created and saved successfully'},
+        400: {'description': 'Invalid input or error creating hamper'}
+    }
+})
+def create_hamper():
+    data = request.get_json()
+    quantity = data.get('quantity', 1)
+
+    # Automatically retrieve the customer ID (e.g., from headers or session)
+    customer_id = request.headers.get('Customer-ID')
+
+    if not customer_id:
+        return jsonify({'error': 'Customer ID is missing in headers.'}), 400
+    if quantity <= 0:
+        return jsonify({'error': 'Quantity must be greater than 0.'}), 400
+
+    try:
+        hampers = []
+
+        for _ in range(quantity):
+            # Generate a unique hamper ID
+            hamper_id = generate_garment_id()
+
+            # Create a hamper instance
+            hamper = Hamper(hamper_id, customer_id)
+            hamper.save_to_db()
+            hampers.append(hamper.to_dict())
+
+        return jsonify({
+            'message': f'{quantity} hamper(s) created successfully.',
+            'hampers': hampers
+        }), 201
 
     except Exception as e:
         return jsonify({'error': str(e)}), 400

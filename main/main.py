@@ -1,7 +1,7 @@
 import pyrebase
-from flask import redirect, url_for, session
-from config import Config
 import firebase_admin
+from config import Config
+from flask import redirect
 from firebase_admin import credentials, firestore
 
 # Initialize Firebase Admin SDK (for Firestore)
